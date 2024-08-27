@@ -1,6 +1,7 @@
-from flask import jsonify, request
 from re import match
 from http import HTTPStatus
+
+from flask import jsonify, request
 
 from . import app, db
 from .models import URLMap
@@ -15,13 +16,11 @@ MAX_LENGTH = 16
 @app.route('/api/id/', methods=['POST'])
 def create_id():
     data = request.get_json(silent=True)
-    if not data:
+    if data is None:
         raise InvalidAPIUsage('Отсутствует тело запроса')
     if 'url' not in data:
         raise InvalidAPIUsage('"url" является обязательным полем!')
-    if 'custom_id' not in data or \
-            (data['custom_id'] == '') or \
-            (data['custom_id'] is None):
+    if not data.get('custom_id'):
         data['custom_id'] = get_unique_short_id()
     if len(data['custom_id']) > MAX_LENGTH:
         raise InvalidAPIUsage(
@@ -44,6 +43,6 @@ def create_id():
 @app.route('/api/id/<short_id>/', methods=['GET'])
 def get_url(short_id):
     url = URLMap.query.filter_by(short=short_id).first()
-    if not url:
+    if url is None:
         raise InvalidAPIUsage('Указанный id не найден', HTTPStatus.NOT_FOUND)
     return jsonify(url=url.original), HTTPStatus.OK
